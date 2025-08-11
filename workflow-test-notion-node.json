@@ -1,0 +1,97 @@
+{
+  "name": "TEST - Mise à jour avec Nœud Notion",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "507bd4507b644b78b44d4ceeb809f1e0",
+          "mode": "id"
+        },
+        "filterType": "manual",
+        "conditions": {
+          "conditions": [
+            {
+              "key": "Traité",
+              "condition": "isNotChecked"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "notion-get-ideas",
+      "name": "📥 Récupérer Idée Non Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Traité",
+              "checkbox": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-update",
+      "name": "✅ Mise à jour Notion (Nœud natif)",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result",
+              "name": "result",
+              "value": "✅ Succès! L'idée a été marquée comme traitée avec le nœud Notion natif.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "success",
+      "name": "✨ Succès",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [[{"node": "📥 Récupérer Idée Non Traitée", "type": "main", "index": 0}]]
+    },
+    "📥 Récupérer Idée Non Traitée": {
+      "main": [[{"node": "✅ Mise à jour Notion (Nœud natif)", "type": "main", "index": 0}]]
+    },
+    "✅ Mise à jour Notion (Nœud natif)": {
+      "main": [[{"node": "✨ Succès", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}
