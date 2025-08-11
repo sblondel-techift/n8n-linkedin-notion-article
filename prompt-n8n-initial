@@ -1,0 +1,78 @@
+# Contexte : Automatisation de création d'articles LinkedIn avec N8N
+
+## Vue d'ensemble du projet
+Je souhaite créer une automatisation qui génère des articles LinkedIn de haute qualité à partir d'idées stockées dans Notion. Les articles traitent de sujets de web analyse et data analyse, avec un angle éditorial défini au cas par cas dans les colonnes Notion "notes personnelles" et "question à adresser".
+
+## Architecture générale
+- **Stockage** : 2 bases de données Notion (entrée et sortie)
+- **Orchestration** : N8N hébergé sur Hostinger
+- **IA** : Perplexity (recherche approfondie) + Claude (rédaction)
+- **Publication** : LinkedIn (manuelle pour l'instant)
+
+## Bases de données Notion existantes
+
+### 1. Base d'entrée : "Banque d'idées - Articles IA"
+- **ID** : 507bd4507b644b78b44d4ceeb809f1e0
+- **URL** : https://www.notion.so/507bd4507b644b78b44d4ceeb809f1e0
+- **Localisation** : Page Communication
+- **Rôle** : Contient les sujets d'articles avec contexte, sources, angle personnel
+- **Colonnes clés** : "notes personnelles" et "question à adresser" (définissent l'angle éditorial)
+- **Première entrée test** : Article sur Google Tag Manager (révolution avril 2025)
+
+### 2. Base de sortie : "Articles LinkedIn Générés"
+- **ID** : 9b915f4f6bae479f9326ff2cfdabadd3  
+- **URL** : https://www.notion.so/9b915f4f6bae479f9326ff2cfdabadd3
+- **Localisation** : Page Communication
+- **Rôle** : Stocke les articles générés avec leur contenu complet et métadonnées
+
+## Configuration N8N
+
+### Accès API
+```
+URL de l'instance : https://n8n.srv802498.hstgr.cloud
+URL du workflow : https://n8n.srv802498.hstgr.cloud/workflow/8fRjPcH3dc54VPPX
+API Key : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YzQxNzU3NC0wMjdkLTQ2ZDMtODQ1NS1jNWM5OGU3NDM1ZjUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU0NTE5NDkwfQ.k2sBE2EH0XaiPOOTAax79OfHwwuX0LbX80nj3KE8O0s
+```
+
+### Flux souhaité
+1. Récupérer une idée non traitée depuis Notion (priorité haute en premier)
+2. Enrichir avec Perplexity en recherche approfondie
+3. Générer l'article avec Claude (angle Web Analyst + IA)
+4. Créer des hashtags optimisés
+5. Sauvegarder dans la base "Articles générés"
+6. Marquer l'idée source comme traitée
+
+## Agents IA à configurer
+
+### Perplexity - Recherche approfondie
+- Objectif : Enrichir le sujet avec des données actuelles, tendances, statistiques
+- Mode : Recherche approfondie activée
+- Focus : Actualités tech, data analytics, IA, transformations digitales
+
+### Claude - Rédaction
+- Objectif : Créer un article LinkedIn engageant de 800-1200 mots
+- Angle : Défini par les colonnes "notes personnelles" et "question à adresser" dans Notion
+- Ton : Professionnel mais accessible, avec exemples concrets
+- Structure : Accroche forte, insights pratiques, angle personnalisé selon les indications Notion
+
+### Agent Hashtags (GPT ou Claude)
+- Objectif : 10 hashtags pertinents pour LinkedIn
+- Mix : Hashtags populaires + niche analytics/IA
+
+## Points d'attention
+- Les articles doivent apporter une vraie valeur ajoutée (pas de contenu générique)
+- Respecter scrupuleusement les indications des colonnes "notes personnelles" et "question à adresser"
+- Si ces colonnes sont vides, traiter le sujet de façon générique mais professionnelle
+- Maintenir une expertise en web analyse et data analyse dans le traitement des sujets
+
+## Objectif final
+Créer un système qui transforme des idées brutes en articles LinkedIn de qualité professionnelle sur des sujets de web analyse et data analyse, en respectant l'angle éditorial spécifique défini dans Notion pour chaque article.
+
+---
+
+**Actions attendues :**
+1. Configurer la connexion entre N8N et Notion
+2. Créer le workflow avec les bons agents
+3. Tester avec l'idée GTM existante
+4. Optimiser les prompts selon les résultats
+5. Proposer des améliorations pour le processus

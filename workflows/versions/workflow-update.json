@@ -1,0 +1,309 @@
+{
+  "name": "hartran-linkedin-article",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "507bd4507b644b78b44d4ceeb809f1e0",
+          "mode": "id"
+        },
+        "filterType": "manual",
+        "conditions": {
+          "conditions": [
+            {
+              "key": "Statut",
+              "condition": "equals",
+              "value": "Non traité"
+            }
+          ]
+        },
+        "sort": {
+          "sortValue": [
+            {
+              "key": "Priorité",
+              "type": "select",
+              "direction": "descending"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "notion-get-ideas",
+      "name": "📥 Récupérer Idée Non Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$credentials.apiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"sonar\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un expert en recherche d'informations sur les sujets de web analyse et data analyse. Tu dois effectuer une recherche approfondie et fournir des informations actuelles, des statistiques, des tendances et des exemples concrets.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Effectue une recherche approfondie sur le sujet suivant pour un article LinkedIn professionnel:\\n\\nTitre: {{ $json.properties['Titre'].title[0].plain_text }}\\n\\nContexte et sources: {{ $json.properties['Contexte et sources'].rich_text[0].plain_text }}\\n\\nRecherche les dernières actualités, statistiques, études de cas, et innovations sur ce sujet. Fournis des données concrètes et vérifiables.\"\n    }\n  ],\n  \"search\": true\n}",
+        "options": {}
+      },
+      "id": "perplexity-research",
+      "name": "🔍 Enrichir avec Perplexity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{$credentials.apiKey}}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-3-5-sonnet-20241022\",\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un expert en rédaction d'articles LinkedIn professionnels sur des sujets de web analyse et data analyse. Tu rédiges des articles engageants de 800-1200 mots avec une structure claire et des insights pratiques.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Rédige un article LinkedIn professionnel basé sur les informations suivantes:\\n\\nSujet: {{ $node['notion-get-ideas'].json.properties['Titre'].title[0].plain_text }}\\n\\nNotes personnelles: {{ $node['notion-get-ideas'].json.properties['Notes personnelles'].rich_text[0]?.plain_text || 'Aucune note spécifique' }}\\n\\nQuestion à adresser: {{ $node['notion-get-ideas'].json.properties['Question à adresser'].rich_text[0]?.plain_text || 'Aucune question spécifique' }}\\n\\nRecherche Perplexity:\\n{{ $json.body.choices[0].message.content }}\\n\\nConsignes:\\n- Structure avec une accroche forte\\n- Développement avec exemples concrets\\n- Insights pratiques et actionnables\\n- Conclusion avec appel à l'action\\n- Ton professionnel mais accessible\\n- Intègre l'angle défini dans les notes personnelles et questions si fourni\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "claude-write",
+      "name": "✍️ Rédiger avec Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$credentials.apiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un expert en marketing LinkedIn. Génère exactement 10 hashtags pertinents pour l'article fourni. Mélange hashtags populaires et spécialisés dans le domaine de l'analytics et du data.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Génère 10 hashtags pour cet article LinkedIn:\\n\\n{{ $json.content[0].text }}\\n\\nRetourne uniquement les hashtags séparés par des espaces, sans numérotation ni autre texte.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "openai-hashtags",
+      "name": "🏷️ Générer Hashtags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "value": "9b915f4f6bae479f9326ff2cfdabadd3",
+          "mode": "id"
+        },
+        "title": "={{ $node['notion-get-ideas'].json.properties['Titre'].title[0].plain_text }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Titre",
+              "title": "={{ $node['notion-get-ideas'].json.properties['Titre'].title[0].plain_text }}"
+            },
+            {
+              "key": "Statut",
+              "select": "Publié"
+            },
+            {
+              "key": "Date de génération",
+              "date": "={{ $now }}"
+            },
+            {
+              "key": "Idée source",
+              "relationValue": ["{{ $node['notion-get-ideas'].json.id }}"]
+            },
+            {
+              "key": "Hashtags",
+              "textValue": "={{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "type": "heading_1",
+              "textContent": "={{ $node['notion-get-ideas'].json.properties['Titre'].title[0].plain_text }}"
+            },
+            {
+              "type": "paragraph",
+              "textContent": "={{ $node['claude-write'].json.content[0].text }}"
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "heading_3",
+              "textContent": "Hashtags"
+            },
+            {
+              "type": "paragraph",
+              "textContent": "={{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-save-article",
+      "name": "💾 Sauvegarder Article",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $node['notion-get-ideas'].json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Statut",
+              "select": "Traité"
+            },
+            {
+              "key": "Date de traitement",
+              "date": "={{ $now }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-update-idea",
+      "name": "✅ Marquer Idée Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [
+        [
+          {
+            "node": "📥 Récupérer Idée Non Traitée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Récupérer Idée Non Traitée": {
+      "main": [
+        [
+          {
+            "node": "🔍 Enrichir avec Perplexity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Enrichir avec Perplexity": {
+      "main": [
+        [
+          {
+            "node": "✍️ Rédiger avec Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✍️ Rédiger avec Claude": {
+      "main": [
+        [
+          {
+            "node": "🏷️ Générer Hashtags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🏷️ Générer Hashtags": {
+      "main": [
+        [
+          {
+            "node": "💾 Sauvegarder Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Sauvegarder Article": {
+      "main": [
+        [
+          {
+            "node": "✅ Marquer Idée Traitée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

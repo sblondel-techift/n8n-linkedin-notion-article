@@ -1,0 +1,139 @@
+{
+  "name": "Workflow Notion Simplifié avec Agent IA",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "search",
+        "databaseId": "VOTRE_ID_BASE_IDEES",
+        "filterType": "manual",
+        "matchType": "anyFilter",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Traité",
+              "condition": "checkbox_is_not_checked"
+            }
+          ]
+        },
+        "options": {
+          "sort": {
+            "sortValue": [
+              {
+                "key": "Date de création",
+                "type": "ascending"
+              }
+            ]
+          }
+        },
+        "limit": 1
+      },
+      "id": "notion-get-unprocessed",
+      "name": "📥 Récupérer ID non traité",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [420, 320]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "content": "=Tu es un assistant qui va sauvegarder un article dans Notion.\n\nVoici les informations à sauvegarder dans la base de données Notion (ID: VOTRE_ID_BASE_ARTICLES_GENERES):\n\nTitre: {{ $json.properties['Titre de l'idée'].title[0].text.content }}\n\nContenu principal: {{ $json.properties['Description'].rich_text[0].text.content }}\n\nPublic cible: {{ $json.properties['Public cible'].rich_text[0].text.content }}\n\nHashtags: {{ $json.properties['Hashtags'].rich_text[0].text.content }}\n\nCrée une nouvelle page dans cette base de données avec ces informations.\n\nUtilise le format approprié pour Notion. Assure-toi que le titre est bien défini comme propriété titre de la page.\n\nRéponds avec un JSON confirmant la création: {\"status\": \"success\", \"message\": \"Article sauvegardé\"}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "openai-save-article",
+      "name": "🤖 Agent IA - Sauvegarder Article",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [640, 320]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{ $('notion-get-unprocessed').item.json.id }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Traité",
+              "checkbox": true
+            }
+          ]
+        }
+      },
+      "id": "notion-update-status",
+      "name": "✅ Marquer comme traité",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [860, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": {\n    \"database_id\": \"VOTRE_ID_BASE_ARTICLES_GENERES\"\n  },\n  \"properties\": {\n    \"Titre\": {\n      \"title\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $('notion-get-unprocessed').item.json.properties['Titre de l\\'idée'].title[0].text.content }}\"\n          }\n        }\n      ]\n    },\n    \"Contenu Article\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $('notion-get-unprocessed').item.json.properties['Description'].rich_text[0].text.content }}\"\n          }\n        }\n      ]\n    },\n    \"Public Cible\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $('notion-get-unprocessed').item.json.properties['Public cible'].rich_text[0].text.content || 'Non spécifié' }}\"\n          }\n        }\n      ]\n    },\n    \"Hashtags\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $('notion-get-unprocessed').item.json.properties['Hashtags'].rich_text[0].text.content || '#article' }}\"\n          }\n        }\n      ]\n    }\n  }\n}"
+      },
+      "id": "http-save-notion",
+      "name": "💾 Sauvegarder via API HTTP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 500],
+      "disabled": false,
+      "notes": "Alternative avec requête HTTP directe à l'API Notion"
+    }
+  ],
+  "connections": {
+    "notion-get-unprocessed": {
+      "main": [
+        [
+          {
+            "node": "http-save-notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http-save-notion": {
+      "main": [
+        [
+          {
+            "node": "notion-update-status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "workflow-notion-simplifie"
+  },
+  "tags": []
+}
