@@ -1,0 +1,278 @@
+{
+  "name": "LinkedIn Article Generator - SOLUTION FINALE",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "507bd4507b644b78b44d4ceeb809f1e0",
+          "mode": "id"
+        },
+        "filterType": "manual",
+        "conditions": {
+          "conditions": [
+            {
+              "key": "Traité",
+              "condition": "isNotChecked"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "notion-get-ideas",
+      "name": "📥 Récupérer Idée Non Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Effectue une recherche approfondie sur le sujet suivant pour un article LinkedIn professionnel:\n\nTitre: {{ $json.property_titre_id_e_principale || 'Sans titre' }}\n\nContexte: {{ $json.property_sources_ur_ls || '' }}\n\nNotes: {{ $json.property_notes_personnelles || '' }}\n\nRecherche les dernières actualités, statistiques, études de cas et innovations sur ce sujet. Fournis des données concrètes et vérifiables.",
+        "options": {
+          "systemMessage": "Tu es un expert en recherche d'informations. Fournis des informations actuelles, des statistiques et des exemples concrets."
+        }
+      },
+      "id": "perplexity-agent",
+      "name": "🔍 Agent Perplexity - Recherche",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "model": "perplexity/sonar-pro",
+        "options": {}
+      },
+      "id": "perplexity-model",
+      "name": "Perplexity Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Rédige un article LinkedIn professionnel basé sur les informations suivantes:\n\nSujet: {{ $('📥 Récupérer Idée Non Traitée').item.json.property_titre_id_e_principale || 'Sans titre' }}\n\nNotes personnelles: {{ $('📥 Récupérer Idée Non Traitée').item.json.property_notes_personnelles || '' }}\n\nAngle personnel: {{ $('📥 Récupérer Idée Non Traitée').item.json.property_angle_personnel || '' }}\n\nQuestions à adresser: {{ $('📥 Récupérer Idée Non Traitée').item.json.property_questions_adresser || '' }}\n\nRecherche effectuée:\n{{ $json.output }}\n\nConsignes:\n- Article de 800-1200 mots\n- Structure avec accroche forte\n- Développement avec exemples concrets\n- Insights pratiques et actionnables\n- Conclusion avec appel à l'action\n- Ton professionnel mais accessible\n\nRéponds UNIQUEMENT avec le texte de l'article.",
+        "options": {
+          "systemMessage": "Tu es un expert en rédaction d'articles LinkedIn professionnels. Tu rédiges des articles engageants avec une structure claire et des insights pratiques."
+        }
+      },
+      "id": "claude-agent",
+      "name": "✍️ Agent Claude - Rédaction",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022",
+        "options": {}
+      },
+      "id": "claude-model",
+      "name": "Claude Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [850, 500]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Génère exactement 10 hashtags pertinents pour cet article LinkedIn:\n\n{{ $json.output }}\n\nRetourne uniquement les hashtags séparés par des espaces, sans numérotation ni autre texte.",
+        "options": {
+          "systemMessage": "Tu es un expert en marketing LinkedIn. Tu génères des hashtags optimisés pour maximiser la visibilité des articles."
+        }
+      },
+      "id": "gpt-agent",
+      "name": "🏷️ Agent GPT - Hashtags",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "openai-model",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "title",
+              "name": "title",
+              "value": "={{ $('📥 Récupérer Idée Non Traitée').item.json.property_titre_id_e_principale || 'Sans titre' }}",
+              "type": "string"
+            },
+            {
+              "id": "articleContent",
+              "name": "articleContent",
+              "value": "={{ $('✍️ Agent Claude - Rédaction').item.json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "hashtags",
+              "name": "hashtags",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "ideaId",
+              "name": "ideaId",
+              "value": "={{ $('📥 Récupérer Idée Non Traitée').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-final-data",
+      "name": "📋 Préparer données finales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": {\n    \"database_id\": \"9b915f4f6bae479f9326ff2cfdabadd3\"\n  },\n  \"properties\": {\n    \"Titre\": {\n      \"title\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json.title }}\"\n          }\n        }\n      ]\n    },\n    \"Contenu article\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json.articleContent.substring(0, 2000) || 'Article généré' }}\"\n          }\n        }\n      ]\n    },\n    \"Hashtags\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json.hashtags || '#LinkedIn' }}\"\n          }\n        }\n      ]\n    },\n    \"Post LinkedIn complet\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ ($json.articleContent || '').substring(0, 1500) }}\\n\\n{{ $json.hashtags || '' }}\"\n          }\n        }\n      ]\n    },\n    \"Public cible\": {\n      \"select\": {\n        \"name\": \"Professionnels et décideurs\"\n      }\n    },\n    \"Statistiques clés\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"Article généré via n8n\"\n          }\n        }\n      ]\n    }\n  },\n  \"children\": [\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_1\",\n      \"heading_1\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.title }}\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"divider\",\n      \"divider\": {}\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"paragraph\",\n      \"paragraph\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.articleContent || 'Article en cours de génération' }}\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"divider\",\n      \"divider\": {}\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_2\",\n      \"heading_2\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"🏷️ Hashtags\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"paragraph\",\n      \"paragraph\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.hashtags || '#LinkedIn' }}\"\n            }\n          }\n        ]\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "http-notion-create",
+      "name": "💾 Créer Article dans Notion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Construire l'URL et le body pour la mise à jour\nconst ideaId = items[0].json.ideaId;\nconst updateUrl = `https://api.notion.com/v1/pages/${ideaId}`;\n\nconsole.log('ID de la page à mettre à jour:', ideaId);\nconsole.log('URL construite:', updateUrl);\n\nreturn [{\n  json: {\n    url: updateUrl,\n    body: {\n      properties: {\n        \"Traité\": {\n          checkbox: true\n        }\n      }\n    }\n  }\n}];"
+      },
+      "id": "build-update-request",
+      "name": "🔧 Construire requête de mise à jour",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "http-notion-update",
+      "name": "✅ Marquer Idée Traitée",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "=✨ Workflow terminé avec succès!\n\n📝 Article créé: {{ $('💾 Créer Article dans Notion').item.json.properties?.['Titre']?.title?.[0]?.plain_text }}\n✅ Idée marquée comme traitée\n🔗 URL de l'article: {{ $('💾 Créer Article dans Notion').item.json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "success-message",
+      "name": "✨ Message de succès",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [2050, 300]
+    }
+  ],
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [[{"node": "📥 Récupérer Idée Non Traitée", "type": "main", "index": 0}]]
+    },
+    "📥 Récupérer Idée Non Traitée": {
+      "main": [[{"node": "🔍 Agent Perplexity - Recherche", "type": "main", "index": 0}]]
+    },
+    "🔍 Agent Perplexity - Recherche": {
+      "main": [[{"node": "✍️ Agent Claude - Rédaction", "type": "main", "index": 0}]]
+    },
+    "✍️ Agent Claude - Rédaction": {
+      "main": [[{"node": "🏷️ Agent GPT - Hashtags", "type": "main", "index": 0}]]
+    },
+    "🏷️ Agent GPT - Hashtags": {
+      "main": [[{"node": "📋 Préparer données finales", "type": "main", "index": 0}]]
+    },
+    "📋 Préparer données finales": {
+      "main": [[{"node": "💾 Créer Article dans Notion", "type": "main", "index": 0}]]
+    },
+    "💾 Créer Article dans Notion": {
+      "main": [[{"node": "🔧 Construire requête de mise à jour", "type": "main", "index": 0}]]
+    },
+    "🔧 Construire requête de mise à jour": {
+      "main": [[{"node": "✅ Marquer Idée Traitée", "type": "main", "index": 0}]]
+    },
+    "✅ Marquer Idée Traitée": {
+      "main": [[{"node": "✨ Message de succès", "type": "main", "index": 0}]]
+    },
+    "Perplexity Model": {
+      "ai_languageModel": [[{"node": "🔍 Agent Perplexity - Recherche", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Claude Model": {
+      "ai_languageModel": [[{"node": "✍️ Agent Claude - Rédaction", "type": "ai_languageModel", "index": 0}]]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [[{"node": "🏷️ Agent GPT - Hashtags", "type": "ai_languageModel", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}
