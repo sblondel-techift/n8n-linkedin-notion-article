@@ -220,7 +220,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "https://api.notion.com/v1/pages/{{ $json.ideaId }}",
+        "url": "={{ `https://api.notion.com/v1/pages/${$json.ideaId}` }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "notionApi",
         "sendHeaders": true,
