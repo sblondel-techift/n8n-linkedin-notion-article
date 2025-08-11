@@ -1,0 +1,78 @@
+{
+  "name": "Test Simple avec Agent Claude",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "507bd4507b644b78b44d4ceeb809f1e0",
+          "mode": "id"
+        },
+        "filterType": "manual",
+        "conditions": {
+          "conditions": [
+            {
+              "key": "Statut",
+              "condition": "equals",
+              "value": "Non traité"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "notion-get-ideas",
+      "name": "📥 Récupérer Idée Non Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Génère un court article LinkedIn (300 mots) sur le sujet suivant:\n\nTitre: {{ $json.properties?.['Titre']?.title?.[0]?.plain_text || 'Sans titre' }}\n\nContexte: {{ $json.properties?.['Contexte et sources']?.rich_text?.[0]?.plain_text || 'Pas de contexte' }}\n\nRéponds UNIQUEMENT avec le texte de l'article, sans introduction ni commentaire.",
+        "options": {
+          "systemMessage": "Tu es un expert LinkedIn qui rédige des articles professionnels concis et engageants."
+        }
+      },
+      "id": "claude-agent",
+      "name": "✍️ Agent Claude - Article",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-haiku-20240307",
+        "options": {}
+      },
+      "id": "claude-model",
+      "name": "Claude Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [650, 500]
+    }
+  ],
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [[{"node": "📥 Récupérer Idée Non Traitée", "type": "main", "index": 0}]]
+    },
+    "📥 Récupérer Idée Non Traitée": {
+      "main": [[{"node": "✍️ Agent Claude - Article", "type": "main", "index": 0}]]
+    },
+    "Claude Model": {
+      "ai_languageModel": [[{"node": "✍️ Agent Claude - Article", "type": "ai_languageModel", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}

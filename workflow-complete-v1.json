@@ -1,0 +1,187 @@
+{
+  "name": "LinkedIn Article Generator - Complete V1",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "507bd4507b644b78b44d4ceeb809f1e0",
+          "mode": "id"
+        },
+        "filterType": "manual",
+        "conditions": {
+          "conditions": [
+            {
+              "key": "Statut",
+              "condition": "equals",
+              "value": "Non traité"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "notion-get-ideas",
+      "name": "📥 Récupérer Idée Non Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "title",
+              "name": "title",
+              "value": "={{ $json.properties?.['Titre']?.title?.[0]?.plain_text || 'Sans titre' }}",
+              "type": "string"
+            },
+            {
+              "id": "context",
+              "name": "context",
+              "value": "={{ $json.properties?.['Contexte et sources']?.rich_text?.[0]?.plain_text || 'Pas de contexte' }}",
+              "type": "string"
+            },
+            {
+              "id": "notes",
+              "name": "notes",
+              "value": "={{ $json.properties?.['Notes personnelles']?.rich_text?.[0]?.plain_text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "questions",
+              "name": "questions",
+              "value": "={{ $json.properties?.['Questions à adresser']?.rich_text?.[0]?.plain_text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ideaId",
+              "name": "ideaId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-data",
+      "name": "📋 Préparer les données",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": {\n    \"database_id\": \"9b915f4f6bae479f9326ff2cfdabadd3\"\n  },\n  \"properties\": {\n    \"Titre\": {\n      \"title\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json.title }}\"\n          }\n        }\n      ]\n    },\n    \"Source idée\": {\n      \"relation\": [\n        {\n          \"id\": \"{{ $json.ideaId }}\"\n        }\n      ]\n    }\n  },\n  \"children\": [\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_1\",\n      \"heading_1\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.title }}\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"divider\",\n      \"divider\": {}\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_2\",\n      \"heading_2\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"📝 Article généré automatiquement\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"paragraph\",\n      \"paragraph\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"Cet article sera enrichi par les agents IA dans la version complète du workflow.\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"divider\",\n      \"divider\": {}\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_3\",\n      \"heading_3\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"Contexte\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"paragraph\",\n      \"paragraph\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.context }}\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_3\",\n      \"heading_3\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"Notes personnelles\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"paragraph\",\n      \"paragraph\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.notes || 'Aucune note' }}\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"heading_3\",\n      \"heading_3\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"Questions à adresser\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      \"object\": \"block\",\n      \"type\": \"paragraph\",\n      \"paragraph\": {\n        \"rich_text\": [\n          {\n            \"type\": \"text\",\n            \"text\": {\n              \"content\": \"{{ $json.questions || 'Aucune question spécifique' }}\"\n            }\n          }\n        ]\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "http-notion-create",
+      "name": "💾 Créer Article via HTTP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "articleId",
+              "name": "articleId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "articleUrl",
+              "name": "articleUrl",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "ideaIdToUpdate",
+              "name": "ideaIdToUpdate",
+              "value": "={{ $('📋 Préparer les données').item.json.ideaId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-ids",
+      "name": "💾 Sauvegarder les IDs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $json.ideaIdToUpdate }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Statut\": {\n      \"select\": {\n        \"name\": \"Traité\"\n      }\n    },\n    \"Date de traitement\": {\n      \"date\": {\n        \"start\": \"{{ new Date().toISOString() }}\"\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "http-notion-update",
+      "name": "✅ Marquer Idée Traitée",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [[{"node": "📥 Récupérer Idée Non Traitée", "type": "main", "index": 0}]]
+    },
+    "📥 Récupérer Idée Non Traitée": {
+      "main": [[{"node": "📋 Préparer les données", "type": "main", "index": 0}]]
+    },
+    "📋 Préparer les données": {
+      "main": [[{"node": "💾 Créer Article via HTTP", "type": "main", "index": 0}]]
+    },
+    "💾 Créer Article via HTTP": {
+      "main": [[{"node": "💾 Sauvegarder les IDs", "type": "main", "index": 0}]]
+    },
+    "💾 Sauvegarder les IDs": {
+      "main": [[{"node": "✅ Marquer Idée Traitée", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}
