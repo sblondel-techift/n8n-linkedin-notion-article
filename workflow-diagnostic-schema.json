@@ -1,0 +1,55 @@
+{
+  "name": "Diagnostic - Récupérer Schéma Base Idées",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/databases/507bd4507b644b78b44d4ceeb809f1e0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-schema",
+      "name": "🔍 Récupérer Schéma Base Idées",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Analyse du schéma pour trouver la propriété de statut\nconst schema = items[0].json;\nconst properties = schema.properties;\n\n// Extraction de tous les noms de propriétés\nconst allPropertyNames = Object.keys(properties);\n\n// Recherche des propriétés potentiellement liées au statut\nconst statusRelatedProperties = allPropertyNames.filter(name => {\n  const lowerName = name.toLowerCase();\n  return lowerName.includes('status') || \n         lowerName.includes('statut') ||\n         lowerName.includes('état') ||\n         lowerName.includes('etat') ||\n         lowerName.includes('state');\n});\n\n// Analyse détaillée\nconst detailedProperties = {};\nfor (const propName of allPropertyNames) {\n  const prop = properties[propName];\n  detailedProperties[propName] = {\n    type: prop.type,\n    options: prop.select?.options || prop.status?.options || prop.multi_select?.options || []\n  };\n}\n\nconsole.log('Toutes les propriétés:', allPropertyNames);\nconsole.log('Propriétés de statut trouvées:', statusRelatedProperties);\n\nreturn [{\n  json: {\n    all_properties: allPropertyNames,\n    status_properties: statusRelatedProperties,\n    detailed_properties: detailedProperties,\n    raw_schema: properties\n  }\n}];"
+      },
+      "id": "analyze-schema",
+      "name": "📊 Analyser le Schéma",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [[{"node": "🔍 Récupérer Schéma Base Idées", "type": "main", "index": 0}]]
+    },
+    "🔍 Récupérer Schéma Base Idées": {
+      "main": [[{"node": "📊 Analyser le Schéma", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}
