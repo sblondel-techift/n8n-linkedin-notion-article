@@ -151,6 +151,139 @@ communication-hartran/
   - Documentation (README, CLAUDE.md, HISTORIQUE.md)
   - Fichiers de configuration et de travail
 
+## 📅 Session du 16/01/2025
+
+### Problème : Articles créés avec champs vides
+- **Symptôme** : Le workflow s'exécute sans erreur mais les articles dans Notion ont des champs vides
+- **Cause** : L'Agent IA de sauvegarde n'est pas la bonne approche pour créer des pages complexes
+- **Nœuds affectés** : "💾 Agent IA - Sauvegarder Article"
+
+### Solution appliquée : Refonte complète du système de sauvegarde
+
+#### 1. Suppression de l'Agent IA
+- L'Agent IA avec outil Notion était peu fiable et ne garantissait pas le format correct
+- Remplacé par une approche directe avec HTTP Request
+
+#### 2. Ajout de nœuds de traitement
+- **📋 Préparer données finales** : Compile toutes les données des agents
+  - Récupère titre, contenu, hashtags
+  - Limite à 2000 caractères (limite Notion rich_text)
+  - Extrait automatiquement les statistiques
+- **📊 Extraire données article** : Récupère les infos de l'article créé
+
+#### 3. Sauvegarde via HTTP Request
+- **💾 Créer Article dans Notion** : POST direct à l'API Notion
+- **✅ Marquer Idée Traitée** : PATCH avec référence directe à l'ID
+
+### Corrections techniques
+1. **Références correctes** aux nœuds avec emojis
+2. **Mapping précis** des propriétés Notion selon PROPERTIES-NOTION.md
+3. **Gestion des données manquantes** avec opérateur `||`
+4. **Expression JavaScript** correcte avec `={{ }}`
+
+### Fichiers créés
+- `workflow-corrige.json` : Version fonctionnelle du workflow
+- `CORRECTIONS-WORKFLOW.md` : Documentation détaillée des changements
+
+### Résultat
+- ✅ Workflow entièrement fonctionnel
+- ✅ Données correctement transmises entre tous les nœuds
+- ✅ Articles sauvegardés avec tout leur contenu
+- ✅ Solution plus stable et maintenable
+
+### Suite - Erreur JSON dans HTTP Request
+- **Erreur** : "JSON parameter needs to be valid JSON" 
+- **Cause** : Expressions n8n `{{ }}` dans une chaîne JSON ne sont pas évaluées
+- **Solution** : Ajout d'un nœud "🔧 Préparer payload Notion" pour construire l'objet
+- **Nouveau flux** : 
+  1. 📋 Préparer données finales
+  2. 🔧 Préparer payload Notion (NOUVEAU)
+  3. 💾 Créer Article dans Notion
+
+### Fichiers créés
+- `workflow-corrige.json` : Version avec fix de `.first()`
+- `workflow-principal-v2.json` : Copie de sauvegarde
+- `workflow-principal-v3.json` : Version finale avec fix JSON
+- `CORRECTIONS-WORKFLOW.md` : Documentation première correction
+- `ERREUR-CORRIGEE-PREPARE-DATA.md` : Documentation erreur `.first()`
+- `ERREUR-CORRIGEE-JSON-BODY.md` : Documentation erreur JSON
+
+## Version 4 (11 août 2025)
+
+### Problème
+- Titre générique "Sans titre"
+- Contenu générique (Claude dit qu'il manque d'informations)
+- Article tronqué avec "..."
+
+### Solution
+- Ajout nœud "🔍 Préparer données idée"
+- Mise à jour prompts AI agents
+- Amélioration extraction titre
+
+### Résultat
+✅ Article sur le bon sujet avec titre correct
+
+## Version 5 (11 août 2025)
+
+### Problème
+- Articles toujours tronqués dans les propriétés
+- Titre encore générique parfois
+
+### Solution
+- Article complet dans le corps de page
+- Propriétés = version résumée
+- Extraction titre améliorée
+- Ajout emoji au post LinkedIn
+
+### Résultat
+✅ Article complet préservé, meilleure présentation
+
+## Version 6 (12 août 2025)
+
+### Problème
+- Post LinkedIn = article tronqué, pas une synthèse
+- Titre page Notion encore générique
+
+### Solution majeure
+- **Nouvel agent** "📱 Synthèse LinkedIn Claude"
+- Post LinkedIn = synthèse copywriting 300-500 mots
+- Titre extrait avec regex "Titre:"
+
+### Résultat
+✅ Post LinkedIn professionnel et engageant
+
+## Version 7 (16 janvier 2025)
+
+### Problème
+- Article tronqué artificiellement à 2000 car dans propriété
+- Même pour articles < 2000 caractères
+
+### Solution
+- Si < 2000 car : article complet
+- Si > 2000 car : coupe intelligente fin de phrase
+- Maximisation espace (1500-1950 car)
+
+### Résultat
+✅ Utilisation optimale de l'espace disponible
+
+## Version 8 (16 janvier 2025) ⭐
+
+### Problème critique
+- Article tronqué dans le **corps de page** (!!)
+- `paragraphe.substring(0, 2000)` → perte de contenu
+
+### Solution majeure
+- **Fonction `diviserTexteEnBlocs()`**
+  - Divise paragraphes > 2000 car
+  - Coupe aux fins de phrases
+  - Crée plusieurs blocs Notion
+- `flatMap` : 1 paragraphe → N blocs
+
+### Résultat final
+✅ **ARTICLE COMPLET GARANTI**
+✅ Aucune perte de contenu
+✅ Workflow totalement optimisé
+
 ---
 
-*Dernière mise à jour : 11/08/2025*
+*Dernière mise à jour : 16/01/2025*

@@ -1,0 +1,478 @@
+{
+  "name": "hartran-linkedin-article-corrige",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 Déclencheur Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [256, 304]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "507bd4507b644b78b44d4ceeb809f1e0",
+          "mode": "id"
+        },
+        "limit": 1,
+        "filterType": "manual",
+        "options": {}
+      },
+      "id": "notion-get-ideas",
+      "name": "📥 Récupérer Idée Non Traitée",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [480, 304],
+      "credentials": {
+        "notionApi": {
+          "id": "aH0S5x4M973O80uj",
+          "name": "Notion LinkedIn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Préparer et déboguer les données de l'idée Notion\nconst notionItem = $json;\n\nconsole.log('=== DONNÉES REÇUES DE NOTION ===');\nconsole.log(JSON.stringify(notionItem, null, 2));\n\n// Extraire les données importantes\nlet titre = 'Article sur la web analyse et data';\nlet sources = '';\nlet notes = '';\nlet angle = '';\nlet questions = '';\nlet pourquoi = '';\nlet stats = '';\nlet citations = '';\n\n// Essayer différentes façons d'accéder aux propriétés\nif (notionItem?.properties) {\n  // Titre\n  titre = notionItem.properties?.title?.[0]?.plain_text || \n          notionItem.properties?.['Titre/Idée principale']?.title?.[0]?.plain_text ||\n          notionItem.properties?.Name?.title?.[0]?.plain_text ||\n          'Article sur la web analyse et data';\n  \n  // Sources\n  sources = notionItem.properties?.['Sources/URLs']?.rich_text?.[0]?.plain_text || '';\n  \n  // Notes personnelles\n  notes = notionItem.properties?.['Notes personnelles']?.rich_text?.[0]?.plain_text || '';\n  \n  // Angle personnel\n  angle = notionItem.properties?.['Angle personnel']?.rich_text?.[0]?.plain_text || '';\n  \n  // Questions\n  questions = notionItem.properties?.['Questions à adresser']?.rich_text?.[0]?.plain_text || '';\n  \n  // Pourquoi maintenant\n  pourquoi = notionItem.properties?.['Pourquoi maintenant?']?.rich_text?.[0]?.plain_text || '';\n  \n  // Statistiques\n  stats = notionItem.properties?.['Data/Statistiques']?.rich_text?.[0]?.plain_text || '';\n  \n  // Citations\n  citations = notionItem.properties?.['Citations clés']?.rich_text?.[0]?.plain_text || '';\n}\n\nconsole.log('=== DONNÉES EXTRAITES ===');\nconsole.log('Titre:', titre);\nconsole.log('Sources:', sources);\nconsole.log('Notes:', notes);\nconsole.log('Angle:', angle);\nconsole.log('Questions:', questions);\n\n// Retourner toutes les données + les données formatées\nreturn {\n  ...notionItem,\n  extracted: {\n    titre,\n    sources,\n    notes,\n    angle,\n    questions,\n    pourquoi,\n    stats,\n    citations\n  }\n};"
+      },
+      "id": "prepare-notion-data",
+      "name": "🔍 Préparer données idée",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 304]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Effectue une recherche approfondie sur le sujet suivant pour un article LinkedIn professionnel:\n\nTitre: {{ $json.extracted?.titre || 'Article sur la web analyse et data' }}\n\nContexte et sources: {{ $json.extracted?.sources || 'Non fourni' }}\n\nNotes personnelles: {{ $json.extracted?.notes || 'Expert en web analyse et data analyse' }}\n\nAngle personnel: {{ $json.extracted?.angle || '' }}\n\nQuestions à adresser: {{ $json.extracted?.questions || '' }}\n\nPourquoi maintenant: {{ $json.extracted?.pourquoi || '' }}\n\nData/Statistiques: {{ $json.extracted?.stats || '' }}\n\nCitations clés: {{ $json.extracted?.citations || '' }}\n\nIMPORTANT: Le sujet est RÉEL et concret. Effectue une recherche approfondie sur ce sujet précis. Ne dis pas qu'il manque des informations.\n\nRecherche les dernières actualités, statistiques, études de cas, et innovations sur ce sujet. Fournis des données concrètes et vérifiables.",
+        "options": {
+          "systemMessage": "Tu es un expert en recherche d'informations sur les sujets de web analyse et data analyse. Tu dois effectuer une recherche approfondie et fournir des informations actuelles, des statistiques, des tendances et des exemples concrets. Utilise tes capacités de recherche web pour trouver les informations les plus récentes et pertinentes."
+        }
+      },
+      "id": "perplexity-agent",
+      "name": "🔍 Agent Recherche Perplexity",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [704, 400]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Rédige un article LinkedIn professionnel de 800-1200 mots basé sur les informations suivantes:\n\nSujet principal: {{ $('🔍 Préparer données idée').first().json.extracted?.titre || 'Article sur la web analyse et data' }}\n\nNotes personnelles: {{ $('🔍 Préparer données idée').first().json.extracted?.notes || '' }}\n\nAngle personnel: {{ $('🔍 Préparer données idée').first().json.extracted?.angle || '' }}\n\nQuestions à adresser: {{ $('🔍 Préparer données idée').first().json.extracted?.questions || '' }}\n\nPourquoi maintenant: {{ $('🔍 Préparer données idée').first().json.extracted?.pourquoi || '' }}\n\nData/Statistiques à intégrer: {{ $('🔍 Préparer données idée').first().json.extracted?.stats || '' }}\n\nCitations clés: {{ $('🔍 Préparer données idée').first().json.extracted?.citations || '' }}\n\nRecherche effectuée:\n{{ $json.output }}\n\nIMPORTANT: Tu DOIS rédiger un article complet sur le sujet donné. Ne dis JAMAIS qu'il manque des informations. Utilise toutes les données fournies pour créer un article pertinent et engageant.\n\nConsignes:\n- Article de 800-1200 mots COMPLET (pas de message d'erreur)\n- Structure avec une accroche forte sur le sujet donné\n- Développement avec exemples concrets tirés de la recherche\n- Insights pratiques et actionnables\n- Conclusion avec appel à l'action\n- Ton professionnel mais accessible\n- Intègre TOUS les éléments fournis (angle personnel, questions, statistiques, citations)\n- Le sujet est TOUJOURS lié à la web analyse, data analyse ou l'IA\n\nNE JAMAIS répondre qu'il manque des informations. TOUJOURS créer un article complet.",
+        "options": {
+          "systemMessage": "Tu es un expert en rédaction d'articles LinkedIn professionnels sur des sujets de web analyse et data analyse. Tu rédiges des articles engageants avec une structure claire et des insights pratiques. Tu adaptes ton angle éditorial en fonction des notes personnelles et questions fournies."
+        }
+      },
+      "id": "claude-agent",
+      "name": "✍️ Agent Rédaction Claude",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [1056, 400]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-opus-20240229",
+        "options": {}
+      },
+      "id": "claude-model",
+      "name": "Claude Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [992, 608],
+      "credentials": {
+        "anthropicApi": {
+          "id": "Ylmsz8Ymq9adIJs0",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Génère exactement 10 hashtags pertinents pour cet article LinkedIn:\n\n{{ $json.output }}\n\nRetourne uniquement les hashtags séparés par des espaces, sans numérotation ni autre texte. Mélange hashtags populaires et spécialisés dans le domaine de l'analytics et du data.",
+        "options": {
+          "systemMessage": "Tu es un expert en marketing LinkedIn. Tu génères des hashtags optimisés pour maximiser la visibilité des articles."
+        }
+      },
+      "id": "openai-agent",
+      "name": "🏷️ Agent Hashtags GPT",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [1408, 400]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "chatgpt-4o-latest"
+        },
+        "options": {}
+      },
+      "id": "openai-model",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1480, 624],
+      "credentials": {
+        "openAiApi": {
+          "id": "W3z11iU8VRrweFEt",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tu es un expert en copywriting LinkedIn. Transforme cet article en un post LinkedIn percutant de 300-500 mots.\n\nArticle complet :\n{{ $('✍️ Agent Rédaction Claude').first().json.output }}\n\nHashtags à intégrer :\n{{ $('🏷️ Agent Hashtags GPT').first().json.output }}\n\nConsignes :\n- Accroche forte dès la première ligne (sans le titre de l'article)\n- Structure aérée avec sauts de ligne\n- Points clés avec emojis appropriés\n- Statistiques percutantes mises en avant\n- Appel à l'action clair et engageant\n- Style direct et conversationnel\n- Éviter le jargon technique complexe\n- Créer de l'émotion et de l'engagement\n\nFormat attendu :\n[Emoji percutant] [Accroche qui donne envie de lire la suite]\n\n[Contexte en 2-3 lignes maximum]\n\n[3-5 points clés avec emojis]\n\n[Statistique ou exemple concret]\n\n[Question ou appel à l'action]\n\n[Ligne vide]\n\n[Tous les hashtags]",
+        "options": {
+          "systemMessage": "Tu es un expert en copywriting et marketing LinkedIn. Tu transformes des articles longs en posts LinkedIn engageants et viraux. Tu maîtrises l'art de l'accroche, du storytelling court et de l'appel à l'action. Ton style est professionnel mais accessible, avec une touche d'émotion pour créer de l'engagement."
+        }
+      },
+      "id": "linkedin-synthesis",
+      "name": "📱 Synthèse LinkedIn Claude",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [1580, 400]
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1580, 576],
+      "id": "linkedin-claude-model",
+      "name": "Claude LinkedIn Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "xLdMbYh4lyLsgJJA",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Préparation des données pour la sauvegarde Notion - VERSION 6\n\n// Récupérer les données du nœud Notion\nconst notionItem = $('📥 Récupérer Idée Non Traitée').first().json;\n\n// Récupérer l'ID de l'idée\nconst ideaId = notionItem?.id || \"\";\n\n// Récupérer le contenu COMPLET de l'article depuis Claude\nlet contenuArticleComplet = \"\";\ntry {\n  contenuArticleComplet = $('✍️ Agent Rédaction Claude').first().json.output || \"\";\n} catch (e) {\n  console.log(\"Erreur lors de la récupération du contenu Claude:\", e.message);\n}\n\n// Extraire le titre depuis le contenu - chercher après \"Titre:\"\nlet titreFinal = \"Sans titre\";\nconst matchTitre = contenuArticleComplet.match(/Titre\\s*:\\s*(.+)/i);\nif (matchTitre && matchTitre[1]) {\n  titreFinal = matchTitre[1].trim();\n  console.log(\"Titre extrait avec regex:\", titreFinal);\n} else {\n  // Si pas trouvé, prendre la première ligne non vide\n  const lignes = contenuArticleComplet.split('\\n').filter(l => l.trim());\n  if (lignes.length > 0 && lignes[0].length > 10 && lignes[0].length < 200) {\n    titreFinal = lignes[0].trim();\n    console.log(\"Titre pris depuis première ligne:\", titreFinal);\n  }\n}\n\n// Récupérer les hashtags depuis GPT\nlet hashtags = \"\";\ntry {\n  hashtags = $('🏷️ Agent Hashtags GPT').first().json.output || \"\";\n} catch (e) {\n  console.log(\"Erreur lors de la récupération des hashtags:\", e.message);\n}\n\n// Récupérer le post LinkedIn synthétisé depuis le nouvel agent\nlet postLinkedInSynthetise = \"\";\ntry {\n  postLinkedInSynthetise = $('📱 Synthèse LinkedIn Claude').first().json.output || \"\";\n  console.log(\"Post LinkedIn synthétisé récupéré:\", postLinkedInSynthetise.substring(0, 100) + \"...\");\n} catch (e) {\n  console.log(\"Erreur lors de la récupération du post LinkedIn:\", e.message);\n  // Fallback : créer un post simple si l'agent n'a pas fonctionné\n  const emojis = [\"🚀\", \"📊\", \"💡\", \"🎯\", \"✨\"];\n  const emoji = emojis[Math.floor(Math.random() * emojis.length)];\n  postLinkedInSynthetise = `${emoji} ${contenuArticleComplet.substring(0, 400)}...\\n\\n${hashtags}`;\n}\n\n// Extraction des statistiques clés du contenu\nconst stats = contenuArticleComplet.match(/\\d+[%€$]?|\\d+\\s*(millions?|milliards?|%)/gi) || [];\nconst statistiquesCles = stats.join(', ');\n\n// Pour la propriété \"Contenu article\" : PAS de troncature si possible\n// Si > 2000 car, on mettra dans le corps, mais on essaie de garder le max\nconst contenuPourPropriete = contenuArticleComplet.substring(0, 2000);\n// Si tronqué, on n'ajoute PAS \"[Voir article complet]\" pour éviter la confusion\n\n// Pour la propriété \"Post LinkedIn complet\" : la synthèse\nconst postLinkedInPourPropriete = postLinkedInSynthetise.substring(0, 2000);\n\n// Log pour débogage\nconsole.log(\"=== DONNÉES PRÉPARÉES V6 ===\");\nconsole.log(\"- Titre final:\", titreFinal);\nconsole.log(\"- ID de l'idée:\", ideaId);\nconsole.log(\"- Longueur article complet:\", contenuArticleComplet.length);\nconsole.log(\"- Longueur post LinkedIn synthétisé:\", postLinkedInSynthetise.length);\nconsole.log(\"- Hashtags:\", hashtags);\n\n// Retourner toutes les données\nreturn {\n  // Données pour les propriétés\n  titre: titreFinal,\n  contenuArticle: contenuPourPropriete,\n  hashtags: hashtags,\n  postLinkedInComplet: postLinkedInPourPropriete,\n  statistiquesCles: statistiquesCles.substring(0, 2000),\n  \n  // Données complètes pour le corps de la page\n  contenuArticleComplet: contenuArticleComplet,\n  postLinkedInCompletTotal: postLinkedInSynthetise,\n  \n  // Métadonnées\n  ideaId: ideaId,\n  dateGeneration: new Date().toISOString(),\n  longueurArticle: contenuArticleComplet.length,\n  nombreMots: contenuArticleComplet.split(/\\s+/).length\n};"
+      },
+      "id": "prepare-data",
+      "name": "📋 Préparer données finales",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Préparation du JSON pour l'API Notion - VERSION 5\nconst notionPayload = {\n  parent: {\n    database_id: \"9b915f4f6bae479f9326ff2cfdabadd3\"\n  },\n  properties: {\n    \"Titre\": {\n      title: [\n        {\n          text: {\n            content: $json.titre || \"Sans titre\"\n          }\n        }\n      ]\n    },\n    \"Contenu article\": {\n      rich_text: [\n        {\n          text: {\n            // Version résumée pour la propriété\n            content: $json.contenuArticle || \"\"\n          }\n        }\n      ]\n    },\n    \"Hashtags\": {\n      rich_text: [\n        {\n          text: {\n            content: $json.hashtags || \"\"\n          }\n        }\n      ]\n    },\n    \"Post LinkedIn complet\": {\n      rich_text: [\n        {\n          text: {\n            // Version résumée avec emoji et hashtags\n            content: $json.postLinkedInComplet || \"\"\n          }\n        }\n      ]\n    },\n    \"Public cible\": {\n      select: {\n        name: \"Professionnels et décideurs\"\n      }\n    },\n    \"Statistiques clés\": {\n      rich_text: [\n        {\n          text: {\n            content: $json.statistiquesCles || \"\"\n          }\n        }\n      ]\n    }\n  },\n  // Ajouter le contenu complet dans le corps de la page\n  children: [\n    {\n      object: \"block\",\n      type: \"heading_1\",\n      heading_1: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: $json.titre || \"Article LinkedIn\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      object: \"block\",\n      type: \"divider\",\n      divider: {}\n    },\n    {\n      object: \"block\",\n      type: \"heading_2\",\n      heading_2: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: \"📄 Article complet\"\n            }\n          }\n        ]\n      }\n    },\n    // Diviser l'article en paragraphes pour Notion\n    ...($json.contenuArticleComplet || \"\").split('\\\\n\\\\n').filter(p => p.trim()).map(paragraphe => ({\n      object: \"block\",\n      type: \"paragraph\",\n      paragraph: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: paragraphe.substring(0, 2000) // Limite par bloc\n            }\n          }\n        ]\n      }\n    })),\n    {\n      object: \"block\",\n      type: \"divider\",\n      divider: {}\n    },\n    {\n      object: \"block\",\n      type: \"heading_2\",\n      heading_2: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: \"🚀 Post LinkedIn prêt à publier\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      object: \"block\",\n      type: \"callout\",\n      callout: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: ($json.postLinkedInCompletTotal || \"\").substring(0, 2000)\n            }\n          }\n        ],\n        icon: {\n          type: \"emoji\",\n          emoji: \"📱\"\n        },\n        color: \"blue_background\"\n      }\n    },\n    {\n      object: \"block\",\n      type: \"divider\",\n      divider: {}\n    },\n    {\n      object: \"block\",\n      type: \"heading_3\",\n      heading_3: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: \"📊 Métadonnées\"\n            }\n          }\n        ]\n      }\n    },\n    {\n      object: \"block\",\n      type: \"bulleted_list_item\",\n      bulleted_list_item: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: `Généré le : ${new Date($json.dateGeneration).toLocaleString('fr-FR')}`\n            }\n          }\n        ]\n      }\n    },\n    {\n      object: \"block\",\n      type: \"bulleted_list_item\",\n      bulleted_list_item: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: `Longueur : ${$json.nombreMots || 0} mots (${$json.longueurArticle || 0} caractères)`\n            }\n          }\n        ]\n      }\n    },\n    {\n      object: \"block\",\n      type: \"bulleted_list_item\",\n      bulleted_list_item: {\n        rich_text: [\n          {\n            type: \"text\",\n            text: {\n              content: `ID de l'idée source : ${$json.ideaId}`\n            }\n          }\n        ]\n      }\n    }\n  ]\n};\n\n// Retourner le payload avec toutes les autres données\nreturn {\n  ...($json || {}),\n  notionPayload: notionPayload\n};"
+      },
+      "id": "prepare-notion-payload",
+      "name": "🔧 Préparer payload Notion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1900, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.notionPayload }}",
+        "options": {}
+      },
+      "id": "notion-create-article",
+      "name": "💾 Créer Article dans Notion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2100, 400],
+      "credentials": {
+        "notionApi": {
+          "id": "aH0S5x4M973O80uj",
+          "name": "Notion LinkedIn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraction des données de l'article créé\nreturn {\n  articleId: $json.id,\n  articleUrl: $json.url,\n  createdTime: $json.created_time,\n  titre: $json.properties?.Titre?.title?.[0]?.text?.content || \"Sans titre\",\n  ideaId: $('📋 Préparer données finales').first().json.ideaId\n};"
+      },
+      "id": "extract-article-data",
+      "name": "📊 Extraire données article",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2272, 400]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ `https://api.notion.com/v1/pages/${$('📥 Récupérer Idée Non Traitée').first().json.id}` }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Traité\": {\n      \"checkbox\": true\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "notion-update-idea",
+      "name": "✅ Marquer Idée Traitée",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2528, 400],
+      "credentials": {
+        "notionApi": {
+          "id": "aH0S5x4M973O80uj",
+          "name": "Notion LinkedIn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "=✅ Article LinkedIn généré avec succès!\n\n📝 Titre: {{ $('📊 Extraire données article').first().json.titre }}\n📄 Article ID: {{ $('📊 Extraire données article').first().json.articleId }}\n🔗 URL Notion: {{ $('📊 Extraire données article').first().json.articleUrl }}\n⏰ Créé le: {{ $('📊 Extraire données article').first().json.createdTime }}\n\n✔️ L'idée a été marquée comme traitée."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "success-message",
+      "name": "✨ Message de succès",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [2784, 400]
+    },
+    {
+      "parameters": {
+        "model": "perplexity/sonar-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [640, 576],
+      "id": "8455064c-cbd7-4f0d-8da7-284d0cd6b3ed",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "xLdMbYh4lyLsgJJA",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "🚀 Déclencheur Manuel": {
+      "main": [
+        [
+          {
+            "node": "📥 Récupérer Idée Non Traitée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Récupérer Idée Non Traitée": {
+      "main": [
+        [
+          {
+            "node": "🔍 Préparer données idée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Préparer données idée": {
+      "main": [
+        [
+          {
+            "node": "🔍 Agent Recherche Perplexity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Agent Recherche Perplexity": {
+      "main": [
+        [
+          {
+            "node": "✍️ Agent Rédaction Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✍️ Agent Rédaction Claude": {
+      "main": [
+        [
+          {
+            "node": "🏷️ Agent Hashtags GPT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "✍️ Agent Rédaction Claude",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🏷️ Agent Hashtags GPT": {
+      "main": [
+        [
+          {
+            "node": "📱 Synthèse LinkedIn Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Synthèse LinkedIn Claude": {
+      "main": [
+        [
+          {
+            "node": "📋 Préparer données finales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Préparer données finales": {
+      "main": [
+        [
+          {
+            "node": "🔧 Préparer payload Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔧 Préparer payload Notion": {
+      "main": [
+        [
+          {
+            "node": "💾 Créer Article dans Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Créer Article dans Notion": {
+      "main": [
+        [
+          {
+            "node": "📊 Extraire données article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Extraire données article": {
+      "main": [
+        [
+          {
+            "node": "✅ Marquer Idée Traitée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Marquer Idée Traitée": {
+      "main": [
+        [
+          {
+            "node": "✨ Message de succès",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🏷️ Agent Hashtags GPT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🔍 Agent Recherche Perplexity",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude LinkedIn Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "📱 Synthèse LinkedIn Claude",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "corrige-v1",
+  "meta": {
+    "instanceId": "403566a9aee191faa03a05967266a85d00d44980ffb18ca114571275711151b4"
+  },
+  "id": "8fRjPcH3dc54VPPX",
+  "tags": []
+}

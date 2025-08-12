@@ -2,7 +2,7 @@
 
 ## 🎯 Résumé du projet
 
-L'utilisateur (Sébastien Blondel) a développé un workflow n8n pour automatiser la génération d'articles LinkedIn à partir d'idées stockées dans Notion. Le workflow utilise plusieurs agents IA en chaîne pour rechercher, rédiger et optimiser le contenu.
+L'utilisateur (Steve Blondel) a développé un workflow n8n pour automatiser la génération d'articles LinkedIn à partir d'idées stockées dans Notion. Le workflow utilise plusieurs agents IA en chaîne pour rechercher, rédiger et optimiser le contenu.
 
 ## ✅ STATUT : WORKFLOW 100% FONCTIONNEL
 
