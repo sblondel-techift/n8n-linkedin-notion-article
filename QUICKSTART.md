@@ -3,7 +3,7 @@
 ## En 5 minutes, générez votre premier article !
 
 ### 1️⃣ Importer le workflow
-Dans n8n, importez : **`workflow-principal-v8.json`**
+Dans n8n, importez : **`workflow-principal-v9.json`**
 
 ### 2️⃣ Configurer les credentials
 - **Notion** : Créez une intégration et copiez le token

@@ -17,22 +17,25 @@ Créer un workflow n8n qui génère automatiquement des articles LinkedIn de qua
 | V5 | 11 août | Articles tronqués | Corps de page Notion pour article complet |
 | V6 | 12 août | Post LinkedIn basique | Agent dédié synthèse copywriting |
 | V7 | 16 janvier | Troncature inutile | Optimisation intelligente |
-| **V8** | 16 janvier | **Article coupé dans le corps** | **Division intelligente des blocs** |
+| V8 | 16 janvier | Article coupé dans le corps | Division intelligente des blocs |
+| **V9** | 16 janvier | **Continue sans idées** | **Condition d'arrêt intelligent** |
 
-## 🎉 Résultat final (V8)
+## 🎉 Résultat final (V9)
 
 ### Fonctionnalités complètes :
 
-1. **Récupération automatique** d'une idée non traitée depuis Notion
-2. **Génération d'article** complet (800-1200 mots) par Claude
-3. **Recherche d'informations** via Perplexity
-4. **Génération de hashtags** optimisés par GPT
-5. **Synthèse LinkedIn** professionnelle (300-500 mots) avec copywriting
-6. **Sauvegarde complète** dans Notion sans aucune perte
-7. **Marquage automatique** de l'idée comme traitée
+1. **Vérification intelligente** : Arrêt propre si aucune idée disponible
+2. **Récupération automatique** d'une idée non traitée depuis Notion
+3. **Génération d'article** complet (800-1200 mots) par Claude
+4. **Recherche d'informations** via Perplexity
+5. **Génération de hashtags** optimisés par GPT
+6. **Synthèse LinkedIn** professionnelle (300-500 mots) avec copywriting
+7. **Sauvegarde complète** dans Notion sans aucune perte
+8. **Marquage automatique** de l'idée comme traitée
 
 ### Points techniques maîtrisés :
 
+- ✅ Arrêt intelligent si aucune donnée
 - ✅ Gestion des limites API Notion (2000 car/bloc)
 - ✅ Division intelligente des paragraphes longs
 - ✅ Extraction robuste du titre
@@ -42,8 +45,9 @@ Créer un workflow n8n qui génère automatiquement des articles LinkedIn de qua
 ## 📁 Fichiers principaux
 
 ### Workflows :
-- **`workflow-principal-v8.json`** ⭐ Version finale à utiliser
-- `workflow-principal-v7.json` - Version précédente (optimisation propriétés)
+- **`workflow-principal-v9.json`** ⭐⭐ VERSION FINALE DÉFINITIVE
+- `workflow-principal-v8.json` - Version avec division des blocs
+- `workflow-principal-v7.json` - Version avec optimisation propriétés
 - `workflow-principal-v6.json` - Version avec synthèse LinkedIn
 
 ### Documentation :
